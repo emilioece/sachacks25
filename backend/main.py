@@ -1,178 +1,137 @@
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
+import google.generativeai as genai
 import os
 from dotenv import load_dotenv
-import openai
-import google.generativeai as genai
-import base64
-from io import BytesIO
-import traceback
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import json
 
 # Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
+# Configure the API key
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY environment variable not set")
 
-client = openai.OpenAI(api_key=openai_api_key)
+genai.configure(api_key=api_key)
 
-# Initialize Google Gemini client
-google_api_key = os.getenv("GOOGLE_API_KEY")
-if not google_api_key:
-    raise ValueError("GOOGLE_API_KEY environment variable is not set")
+# Initialize the model
+model = genai.GenerativeModel('gemini-pro-vision')
 
-genai.configure(api_key=google_api_key)
-
-# Use a newer model as recommended in the error message
-# The error suggested: "Consider switching to different model, for example gemini-1.5-flash"
-GEMINI_MODEL = "models/gemini-1.5-flash"  # This model was in the list of available models
-logger.info(f"Using Gemini model: {GEMINI_MODEL}")
-
-gemini_model = genai.GenerativeModel(GEMINI_MODEL)
-
-app = FastAPI(title="NextJS-FastAPI-OpenAI Backend")
+app = FastAPI()
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Update with your Next.js frontend URL
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Pydantic models
-class ChatMessage(BaseModel):
-    role: str
-    content: str
-
-class ChatRequest(BaseModel):
-    messages: List[ChatMessage]
-    model: str = "gpt-3.5-turbo"
-    temperature: Optional[float] = 0.7
-    max_tokens: Optional[int] = 500
-
-class ChatResponse(BaseModel):
-    response: str
-
-class FoodScanResponse(BaseModel):
-    analysis: str
-    
 @app.get("/")
-async def root():
-    return {"message": "Welcome to the NextJS-FastAPI-OpenAI Backend"}
+def read_root():
+    return {"message": "Recipe Generator API"}
 
-@app.post("/api/chat", response_model=ChatResponse)
-async def chat_with_openai(request: ChatRequest):
+@app.post("/analyze-image/")
+async def analyze_image(file: UploadFile = File(...)):
     try:
-        # Convert Pydantic models to dictionaries for OpenAI API
-        messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+        # Read the image file
+        contents = await file.read()
         
-        # Call OpenAI API
-        response = client.chat.completions.create(
-            model=request.model,
-            messages=messages,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-        )
+        # Prepare the image for the model
+        image_parts = [
+            {
+                "mime_type": file.content_type,
+                "data": contents
+            }
+        ]
         
-        # Extract the response content
-        response_content = response.choices[0].message.content
-        
-        return ChatResponse(response=response_content)
-    
-    except Exception as e:
-        logger.error(f"Error in chat endpoint: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/food-scan", response_model=FoodScanResponse)
-async def scan_food(
-    file: UploadFile = File(...),
-    custom_prompt: Optional[str] = Form(None)
-):
-    try:
-        logger.info(f"Received file: {file.filename}, content_type: {file.content_type}")
-        
-        # Read the file content
-        file_content = await file.read()
-        logger.info(f"File size: {len(file_content)} bytes")
-        
-        # Define the base prompt
-        base_prompt = """
-        You have to identify different types of food in images.
-        The system should accurately detect and label various foods displayed in the image, providing the name
-        of the food and its location within the image (e.g., bottom left, right corner, etc.). Additionally,
-        the system should extract nutritional information and categorize the type of food (e.g., fruits, vegetables, grains, etc.)
-        based on the detected items. The output should include a comprehensive report or display showing the
-        identified foods, their positions, names, and corresponding nutritional details.
+        # Prompt to extract food items in a structured format
+        prompt = """
+        Analyze this image and identify all food items or ingredients visible.
+        Return ONLY a JSON array of strings with the names of the food items.
+        For example: ["apple", "bread", "cheese"]
+        Do not include any explanations or additional text, just the JSON array.
         """
         
-        # Combine with custom prompt if provided
-        prompt = base_prompt
-        if custom_prompt:
-            prompt = f"{base_prompt}\n\nAdditional instructions: {custom_prompt}"
+        # Generate content
+        response = model.generate_content([prompt, *image_parts])
         
-        logger.info("Calling Gemini API...")
+        # Extract the text response
+        text_response = response.text
         
-        # Call Gemini API
+        # Try to parse as JSON
         try:
-            # Convert image to base64
-            image_base64 = base64.b64encode(file_content).decode('utf-8')
+            # Find JSON array in the response if it's not a clean JSON
+            import re
+            json_match = re.search(r'\[.*\]', text_response, re.DOTALL)
+            if json_match:
+                text_response = json_match.group(0)
             
-            # Create image data
-            image_data = {
-                "mime_type": file.content_type,
-                "data": image_base64
-            }
+            food_items = json.loads(text_response)
             
-            # Generate content using the simplest approach
-            response = gemini_model.generate_content(
-                contents=[prompt, image_data]
-            )
-            
-            logger.info("Gemini API call successful")
-            return FoodScanResponse(analysis=response.text)
-        except Exception as e:
-            logger.error(f"Error calling Gemini API: {str(e)}")
-            logger.error(traceback.format_exc())
-            
-            # Try a different approach if the first one fails
-            try:
-                logger.info("Trying different approach...")
+            # Ensure it's a list
+            if not isinstance(food_items, list):
+                food_items = [str(food_items)]
                 
-                # Create a simple text prompt
-                text_prompt = f"Analyze this food image: {prompt}"
-                
-                # Generate content with just text
-                response = gemini_model.generate_content(text_prompt)
-                logger.info("Gemini API call successful with text-only approach")
-                return FoodScanResponse(analysis=response.text)
-            except Exception as e2:
-                logger.error(f"Error with alternative approach: {str(e2)}")
-                logger.error(traceback.format_exc())
-                raise HTTPException(
-                    status_code=500, 
-                    detail=f"Error calling Gemini API: {str(e)} | Alternative approach error: {str(e2)}"
-                )
-    
+            return {"food_items": food_items}
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return the raw text in a list
+            return {"food_items": [text_response.strip()]}
+            
     except Exception as e:
-        logger.error(f"Error in food-scan endpoint: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Error processing request: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
+
+@app.post("/generate-recipe/")
+async def generate_recipe(ingredients: list[str]):
+    try:
+        # Create a text-only model for recipe generation
+        text_model = genai.GenerativeModel('gemini-pro')
+        
+        # Join ingredients into a comma-separated string
+        ingredients_text = ", ".join(ingredients)
+        
+        # Prompt for recipe generation
+        prompt = f"""
+        Generate a recipe using some or all of these ingredients: {ingredients_text}.
+        
+        Format the response as a JSON object with the following structure:
+        {{
+            "title": "Recipe Name",
+            "ingredients": ["ingredient 1", "ingredient 2", ...],
+            "instructions": ["step 1", "step 2", ...],
+            "prep_time": "X minutes",
+            "cook_time": "Y minutes",
+            "servings": Z
+        }}
+        
+        Return only the JSON object without any additional text.
+        """
+        
+        # Generate content
+        response = text_model.generate_content(prompt)
+        
+        # Extract the text response
+        text_response = response.text
+        
+        # Try to parse as JSON
+        try:
+            # Find JSON object in the response if it's not a clean JSON
+            import re
+            json_match = re.search(r'\{.*\}', text_response, re.DOTALL)
+            if json_match:
+                text_response = json_match.group(0)
+                
+            recipe = json.loads(text_response)
+            return recipe
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return the raw text
+            return {"error": "Failed to parse recipe", "raw_response": text_response}
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating recipe: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

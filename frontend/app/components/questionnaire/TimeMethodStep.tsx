@@ -23,7 +23,11 @@ export default function TimeMethodStep({ preferences, updatePreferences, onNext,
   ];
   
   const handlePrepTimeChange = (time: string) => {
-    updatePreferences("prepTime", time);
+    if (preferences.prepTime === time) {
+      updatePreferences("prepTime", "");
+    } else {
+      updatePreferences("prepTime", time);
+    }
   };
   
   const handleAddMethod = () => {

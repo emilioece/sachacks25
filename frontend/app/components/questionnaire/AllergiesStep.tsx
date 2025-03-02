@@ -49,7 +49,7 @@ export default function AllergiesStep({ preferences, updatePreferences, onNext }
       
       {/* Allergies Section */}
       <div className="mb-8">
-        <h3 className="text-lg font-medium mb-3 text-gray-700">Do you have any food allergies?</h3>
+        <h3 className="text-lg font-medium mb-3 text-green-700">Do you have any food allergies?</h3>
         
         <div className="flex flex-wrap gap-2 mb-4">
           {commonAllergies.map(allergy => (
@@ -109,7 +109,7 @@ export default function AllergiesStep({ preferences, updatePreferences, onNext }
       
       {/* Dietary Restrictions Section */}
       <div className="mb-8">
-        <h3 className="text-lg font-medium mb-3 text-gray-700">Any dietary restrictions or preferences?</h3>
+        <h3 className="text-lg font-medium mb-3 text-green-700">Any dietary restrictions or preferences?</h3>
         
         <div className="flex flex-wrap gap-2 mb-4">
           {dietaryRestrictions.map(diet => (

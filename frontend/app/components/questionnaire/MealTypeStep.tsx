@@ -58,7 +58,7 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
   
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-semibold text-green-800">Meal Type & Cuisine</h2>
+      <h2 className="text-xl font-semibold text-green-800">Meal Type & Cuisine</h2>
       
       {/* Meal Type Selection */}
       <div>
@@ -103,25 +103,7 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
             ))}
           </div>
         )}
-        
-        {/* Cuisine input */}
-        <div className="flex mb-4">
-          <input
-            type="text"
-            value={cuisineInput}
-            onChange={(e) => setCuisineInput(e.target.value)}
-            onKeyDown={handleCuisineKeyDown}
-            placeholder="Type a cuisine..."
-            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-800"
-          />
-          <button
-            onClick={handleAddCuisine}
-            className="bg-green-600 text-white px-4 py-2 rounded-r-md hover:bg-green-700"
-          >
-            Add
-          </button>
-        </div>
-        
+
         {/* Popular cuisines */}
         <div>
           <h4 className="text-sm font-medium text-gray-600 mb-2">Popular cuisines:</h4>
@@ -142,6 +124,25 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
           </div>
         </div>
       </div>
+
+        {/* Cuisine input */}
+        <div className="flex mb-4">
+          <input
+            type="text"
+            value={cuisineInput}
+            onChange={(e) => setCuisineInput(e.target.value)}
+            onKeyDown={handleCuisineKeyDown}
+            placeholder="Type a cuisine..."
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-800"
+          />
+          <button
+            onClick={handleAddCuisine}
+            className="bg-green-600 text-white px-4 py-2 rounded-r-md hover:bg-green-700"
+          >
+            Add
+          </button>
+        </div>
+        
       
       {/* Navigation Buttons */}
       <div className="flex justify-between pt-4">

@@ -23,7 +23,11 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
   ];
   
   const handleMealTypeChange = (mealType: string) => {
-    updatePreferences("mealType", mealType);
+    if (preferences.mealType === mealType) {
+      updatePreferences("mealType", "");
+    } else {
+      updatePreferences("mealType", mealType);
+    }
   };
   
   const handleAddCuisine = () => {
@@ -47,6 +51,8 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
   const handleCuisineClick = (cuisine: string) => {
     if (!preferences.cuisineType.includes(cuisine)) {
       updatePreferences("cuisineType", [...preferences.cuisineType, cuisine]);
+    } else {
+      handleRemoveCuisine(cuisine);
     }
   };
   
@@ -106,7 +112,7 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
             onChange={(e) => setCuisineInput(e.target.value)}
             onKeyDown={handleCuisineKeyDown}
             placeholder="Type a cuisine..."
-            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-800"
           />
           <button
             onClick={handleAddCuisine}

@@ -106,7 +106,7 @@ export default function IngredientsStep({ preferences, updatePreferences, onBack
             onChange={(e) => setPreferredInput(e.target.value)}
             onKeyDown={handlePreferredKeyDown}
             placeholder="Type an ingredient..."
-            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-800"
           />
           <button
             onClick={handleAddPreferred}
@@ -169,7 +169,7 @@ export default function IngredientsStep({ preferences, updatePreferences, onBack
             onChange={(e) => setAvoidInput(e.target.value)}
             onKeyDown={handleAvoidKeyDown}
             placeholder="Type an ingredient to avoid..."
-            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-800"
           />
           <button
             onClick={handleAddAvoid}

@@ -108,7 +108,7 @@ export default function TimeMethodStep({ preferences, updatePreferences, onNext,
             onChange={(e) => setMethodInput(e.target.value)}
             onKeyDown={handleMethodKeyDown}
             placeholder="Type a cooking method..."
-            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-800"
           />
           <button
             onClick={handleAddMethod}

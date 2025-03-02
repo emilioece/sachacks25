@@ -17,6 +17,10 @@ export default function UploadPage() {
   const [analyzedImage, setAnalyzedImage] = useState<string | null>(null);
   const [detectedItems, setDetectedItems] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [showCameraPreview, setShowCameraPreview] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Redirect if not authenticated
   if (!userLoading && !user) {
@@ -49,6 +53,61 @@ export default function UploadPage() {
 
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
+  };
+
+  // Camera functionality
+  const startCamera = async () => {
+    setShowCameraPreview(true);
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Could not access your camera. Please check permissions.");
+      setShowCameraPreview(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      const tracks = stream.getTracks();
+      
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    
+    setShowCameraPreview(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw the current video frame to the canvas
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert canvas to file
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+          setFiles(prev => [...prev, file]);
+          stopCamera();
+        }
+      }, 'image/jpeg', 0.95);
+    }
   };
 
   const analyzeImages = async () => {
@@ -112,6 +171,43 @@ export default function UploadPage() {
           <h1 className="text-3xl font-bold text-green-800">Upload images</h1>
           <div className="w-24"></div> {/* Spacer for centering */}
         </div>
+        
+        {/* Camera preview modal */}
+        {showCameraPreview && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg overflow-hidden max-w-2xl w-full">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-medium">Take a Photo</h3>
+                <button 
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={stopCamera}
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="relative">
+                <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  playsInline 
+                  className="w-full h-auto"
+                  style={{ maxHeight: '70vh' }}
+                ></video>
+                <canvas ref={canvasRef} className="hidden"></canvas>
+              </div>
+              
+              <div className="p-4 flex justify-center">
+                <button 
+                  className="bg-green-600 text-white rounded-full w-16 h-16 flex items-center justify-center hover:bg-green-700"
+                  onClick={capturePhoto}
+                >
+                  <Camera size={28} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         {uploadStatus === "success" && analyzedImage ? (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -220,8 +316,19 @@ export default function UploadPage() {
                   <div className="bg-green-100 p-5 rounded-full mb-6">
                     <Upload className="h-12 w-12 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-medium mb-3">Drag & drop images or <span className="text-green-600 cursor-pointer hover:underline" onClick={handleBrowseClick}>browse</span></h3>
-                  <p className="text-gray-500 mb-4">JPG and PNG under 500 MB</p>
+                  <h3 className="text-xl font-medium mb-3">
+                    <span className="text-gray-700">Drag & drop images or</span> 
+                    <span className="text-green-600 font-semibold cursor-pointer hover:underline ml-1" onClick={handleBrowseClick}>browse</span>
+                  </h3>
+                  <p className="text-gray-500 mb-6">JPG and PNG under 500 MB</p>
+                  
+                  <button
+                    className="flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-md hover:bg-blue-700 transition-colors"
+                    onClick={startCamera}
+                  >
+                    <Camera size={20} />
+                    Take a Photo
+                  </button>
                 </div>
               </div>
               

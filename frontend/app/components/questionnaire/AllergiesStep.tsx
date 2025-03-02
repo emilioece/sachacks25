@@ -74,7 +74,7 @@ export default function AllergiesStep({ preferences, updatePreferences, onNext }
             value={newAllergy}
             onChange={(e) => setNewAllergy(e.target.value)}
             placeholder="Add other allergy..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
             onKeyDown={(e) => e.key === "Enter" && addAllergy(newAllergy)}
           />
           <button
@@ -134,7 +134,7 @@ export default function AllergiesStep({ preferences, updatePreferences, onNext }
             value={newDietary}
             onChange={(e) => setNewDietary(e.target.value)}
             placeholder="Add other dietary restriction..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-800"
             onKeyDown={(e) => e.key === "Enter" && addDietary(newDietary)}
           />
           <button

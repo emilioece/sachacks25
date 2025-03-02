@@ -5,7 +5,7 @@ export const GET = handleAuth({
     returnTo: '/dashboard'
   }),
   callback: handleCallback({
-    afterCallback: (_req, _res, session) => {
+    afterCallback: (_req: any, _res: any, session: any) => {
       return session;
     }
   })

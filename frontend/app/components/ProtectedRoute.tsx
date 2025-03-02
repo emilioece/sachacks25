@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth0 } from '@auth0/auth0-react';
+import { useUser } from '@auth0/nextjs-auth0/client';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -9,16 +9,14 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
+  const { user, isLoading, error } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      loginWithRedirect({
-        appState: { returnTo: window.location.pathname },
-      });
+    if (!isLoading && !user) {
+      router.push('/api/auth/login');
     }
-  }, [isAuthenticated, isLoading, loginWithRedirect, router]);
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -28,7 +26,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null;
   }
 

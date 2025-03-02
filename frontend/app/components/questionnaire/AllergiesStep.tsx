@@ -91,12 +91,12 @@ export default function AllergiesStep({ preferences, updatePreferences, onNext }
             <h4 className="text-sm font-medium text-gray-600 mb-2">Your allergies:</h4>
             <div className="flex flex-wrap gap-2">
               {preferences.allergies.map((allergy: string) => (
-                <div key={allergy} className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                <div key={allergy} className="flex items-center bg-red-100 text-gray-800 px-3 py-1 rounded-full">
                   {allergy}
                   <button
                     type="button"
                     onClick={() => removeAllergy(allergy)}
-                    className="ml-1.5 text-green-600 hover:text-green-800"
+                    className="ml-1.5 text-red-600 hover:text-red-800"
                   >
                     <X size={14} />
                   </button>

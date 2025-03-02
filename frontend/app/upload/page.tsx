@@ -207,10 +207,9 @@ export default function UploadPage() {
               onClick={() => router.push('/dashboard')}
             >
               <ChevronLeft size={20} />
-              <span>Back to Dashboard</span>
+              <span>Back</span>
             </button>
           </div>
-          <h1 className="text-3xl font-bold text-green-800">Upload images</h1>
           <div className="w-24"></div> {/* Spacer for centering */}
         </div>
         
@@ -462,7 +461,7 @@ export default function UploadPage() {
 
       <footer className="w-full border-t border-green-200 mt-12 pt-6 pb-4">
         <div className="text-center text-gray-600 text-sm">
-          <p>© {new Date().getFullYear()} Waste None. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} EcoEats. All rights reserved.</p>
         </div>
       </footer>
     </div>

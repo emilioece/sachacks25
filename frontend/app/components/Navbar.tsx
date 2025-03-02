@@ -18,7 +18,7 @@ export default function Navbar() {
     <header className="flex justify-between items-center w-full mb-6">
       <Link href="/" className="text-2xl font-bold text-green-800 flex items-center gap-2">
         <Leaf className="text-green-600" size={24} />
-        Waste None
+        EcoEats
       </Link>
       
       <div className="flex gap-2">

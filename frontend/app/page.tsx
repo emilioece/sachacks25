@@ -122,13 +122,6 @@ export default function Home() {
             <Camera className="text-green-600" size={20} />
             Take snap shots of what&apos;s left in your fridge/pantry
           </p>
-          {user && (
-            <h2 className="text-2xl font-semibold mt-3 text-green-700">
-              Hello, {typeof user.given_name === 'string' 
-                ? user.given_name 
-                : (typeof user.name === 'string' ? user.name.split(' ')[0] : 'User')}!
-            </h2>
-          )}
         </div>
 
         {/* Recipe Carousel Animation - reduced vertical margins */}

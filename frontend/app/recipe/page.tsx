@@ -348,7 +348,7 @@ export default function RecipePage() {
 
       <footer className="w-full border-t border-green-200 mt-12 py-6 bg-white">
         <div className="text-center text-gray-600 text-sm">
-          <p>© {new Date().getFullYear()} Waste None. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} EcoEats. All rights reserved.</p>
         </div>
       </footer>
     </div>

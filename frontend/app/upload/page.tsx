@@ -3,10 +3,15 @@
 import { useState, useRef } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useRouter } from "next/navigation";
-import { Upload, X, Camera, Loader2, UtensilsCrossed, ChevronLeft } from "lucide-react";
+import { Upload, X, Camera, Loader2, UtensilsCrossed, ChevronLeft, ChevronRight, ChevronLeft as ChevronLeftIcon } from "lucide-react";
 import Image from "next/image";
 import Navbar from "../components/Navbar";
 import { motion } from "framer-motion";
+
+interface AnalyzedImage {
+  image: string;
+  items: string[];
+}
 
 export default function UploadPage() {
   const { user, isLoading: userLoading } = useUser();
@@ -14,8 +19,9 @@ export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
-  const [analyzedImage, setAnalyzedImage] = useState<string | null>(null);
-  const [detectedItems, setDetectedItems] = useState<string[]>([]);
+  const [analyzedImages, setAnalyzedImages] = useState<AnalyzedImage[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [allDetectedItems, setAllDetectedItems] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [showCameraPreview, setShowCameraPreview] = useState(false);
@@ -115,27 +121,49 @@ export default function UploadPage() {
 
     setUploading(true);
     setUploadStatus("uploading");
+    setAnalyzedImages([]);
+    setAllDetectedItems([]);
 
     try {
-      // Create a FormData object to send the files
-      const formData = new FormData();
-      formData.append("file", files[0]); // For now, just analyze the first file
-
-      // Send the request to the backend
-      const response = await fetch("http://localhost:8000/analyze-image/", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
+      // Process each file sequentially
+      const results: AnalyzedImage[] = [];
+      const allItems: string[] = [];
       
-      // Set the analyzed image and detected items
-      setAnalyzedImage(`data:image/jpeg;base64,${data.labeled_image}`);
-      setDetectedItems(data.food_items || []);
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append("file", files[i]);
+        
+        // Send the request to the backend
+        const response = await fetch("http://localhost:8000/analyze-image/", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error analyzing image ${i+1}: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Add to results
+        const imageResult: AnalyzedImage = {
+          image: `data:image/jpeg;base64,${data.labeled_image}`,
+          items: data.food_items || []
+        };
+        
+        results.push(imageResult);
+        
+        // Add unique items to the all items list
+        data.food_items?.forEach((item: string) => {
+          if (!allItems.includes(item)) {
+            allItems.push(item);
+          }
+        });
+      }
+      
+      setAnalyzedImages(results);
+      setAllDetectedItems(allItems);
+      setCurrentImageIndex(0);
       setUploadStatus("success");
     } catch (error) {
       console.error("Error analyzing images:", error);
@@ -146,12 +174,26 @@ export default function UploadPage() {
   };
 
   const generateRecipe = () => {
-    if (detectedItems.length > 0) {
+    if (allDetectedItems.length > 0) {
       // Store detected items in session storage to use in recipe page
-      sessionStorage.setItem('detectedIngredients', JSON.stringify(detectedItems));
+      sessionStorage.setItem('detectedIngredients', JSON.stringify(allDetectedItems));
       router.push('/recipe');
     }
   };
+
+  const nextImage = () => {
+    if (currentImageIndex < analyzedImages.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
+    }
+  };
+
+  const currentImage = analyzedImages[currentImageIndex];
 
   return (
     <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-8 font-[family-name:var(--font-geist-sans)] bg-green-50">
@@ -209,10 +251,15 @@ export default function UploadPage() {
           </div>
         )}
         
-        {uploadStatus === "success" && analyzedImage ? (
+        {uploadStatus === "success" && analyzedImages.length > 0 ? (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <h2 className="text-2xl font-semibold text-green-700">Analysis Results</h2>
+              {analyzedImages.length > 1 && (
+                <p className="text-gray-600 mt-1">
+                  Showing image {currentImageIndex + 1} of {analyzedImages.length}
+                </p>
+              )}
             </div>
             
             <div className="p-6">
@@ -222,22 +269,42 @@ export default function UploadPage() {
                   <h3 className="text-lg font-medium mb-4 text-green-700">Analyzed Image</h3>
                   <div className="relative w-full h-[400px] border border-gray-200 rounded-lg overflow-hidden bg-white">
                     <Image 
-                      src={analyzedImage}
+                      src={currentImage.image}
                       alt="Analyzed fridge contents"
                       fill
                       style={{ objectFit: 'contain' }}
                       className="p-2"
                     />
+                    
+                    {/* Image navigation controls */}
+                    {analyzedImages.length > 1 && (
+                      <div className="absolute inset-x-0 bottom-0 flex justify-between p-2">
+                        <button 
+                          className={`p-2 rounded-full bg-white shadow-md ${currentImageIndex === 0 ? 'text-gray-400' : 'text-green-600 hover:bg-green-50'}`}
+                          onClick={prevImage}
+                          disabled={currentImageIndex === 0}
+                        >
+                          <ChevronLeftIcon size={24} />
+                        </button>
+                        <button 
+                          className={`p-2 rounded-full bg-white shadow-md ${currentImageIndex === analyzedImages.length - 1 ? 'text-gray-400' : 'text-green-600 hover:bg-green-50'}`}
+                          onClick={nextImage}
+                          disabled={currentImageIndex === analyzedImages.length - 1}
+                        >
+                          <ChevronRight size={24} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 {/* Detected items list */}
                 <div>
                   <h3 className="text-lg font-medium mb-4 text-green-700">Detected Items</h3>
-                  {detectedItems.length > 0 ? (
+                  {allDetectedItems.length > 0 ? (
                     <div className="bg-gray-50 rounded-lg p-6">
                       <ul className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
-                        {detectedItems.map((item, index) => (
+                        {allDetectedItems.map((item, index) => (
                           <li key={index} className="flex items-center bg-white p-3 rounded-md shadow-sm">
                             <span className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full mr-3"></span>
                             <span className="text-lg text-gray-800">{item}</span>
@@ -256,31 +323,21 @@ export default function UploadPage() {
                       </motion.button>
                     </div>
                   ) : (
-                    <div className="bg-gray-50 p-6 rounded-lg text-center">
-                      <p className="text-gray-500 text-lg mb-4">No items detected. Try uploading a clearer image.</p>
-                      <button 
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-                        onClick={() => {
-                          setFiles([]);
-                          setAnalyzedImage(null);
-                          setDetectedItems([]);
-                          setUploadStatus("idle");
-                        }}
-                      >
-                        Try Again
-                      </button>
+                    <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+                      <p className="text-yellow-800">No ingredients were detected in this image.</p>
+                      <p className="mt-2 text-sm text-yellow-700">Try uploading a clearer image of your fridge or pantry.</p>
                     </div>
                   )}
                 </div>
               </div>
               
               <div className="mt-8 flex justify-center">
-                <button 
-                  className="text-green-700 border-2 border-green-600 px-6 py-3 rounded-md hover:bg-green-50 font-medium transition-colors"
+                <button
+                  className="px-6 py-3 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors flex items-center gap-2"
                   onClick={() => {
                     setFiles([]);
-                    setAnalyzedImage(null);
-                    setDetectedItems([]);
+                    setAnalyzedImages([]);
+                    setAllDetectedItems([]);
                     setUploadStatus("idle");
                   }}
                 >

@@ -1,6 +1,13 @@
-# EcoEats
+## EcoEats 
 
-EcoEats is a web application built with Next.js for the frontend and Python (Uvicorn) for the backend, designed to help reduce food waste. With innovative features powered by Google's Gemini, EcoEats allows users to manage their kitchen ingredients more efficiently while promoting sustainable eating habits.
+Ever open your fridge or pantry and wonder, *What the heck do I do with all these ingredients?* That's where EcoEats comes in. We help you reduce food waste by making it easy to turn what’s in your kitchen into delicious meals. 
+
+You simply take a picture of your fridge or pantry, and we’ll do the rest. EcoEats uses **Google’s Gemini 1.5 Prof** to automatically detect and label ingredients
+
+Using **Gemini 2.0 Flash**, EcoEats generates personalized recipes based on the ingredients you have, your dietary preferences, and any restrictions you might have. No more scrambling to figure out dinner or tossing out forgotten produce!
+
+By eliminating food waste, EcoEats not only helps you make the most of what’s in your kitchen but also promotes sustainable eating practices for a healthier planet.
+
 
 ## Table of Contents
 
@@ -91,15 +98,6 @@ EcoEats is a web application built with Next.js for the frontend and Python (Uvi
    - Frontend: [http://localhost:3000](http://localhost:3000)
    - Backend API: [http://localhost:8000](http://localhost:8000)
 
-## About EcoEats
-
-Ever open your fridge or pantry and wonder, *What the heck do I do with all these ingredients?* That's where EcoEats comes in. We help you reduce food waste by making it easy to turn what’s in your kitchen into delicious meals. 
-
-EcoEats uses **Google’s Gemini 1.5 Prof** to automatically detect and label ingredients in your photos, creating bounding boxes around each item for easy identification. You simply take a picture of your fridge or pantry, and we’ll do the rest.
-
-Then, using **Gemini 2.0 Flash**, EcoEats generates personalized recipes based on the ingredients you have, your dietary preferences, and any restrictions you might have. No more scrambling to figure out dinner or tossing out forgotten produce!
-
-By eliminating food waste, EcoEats not only helps you make the most of what’s in your kitchen but also promotes sustainable eating practices for a healthier planet.
 
 ## Technologies Used
 

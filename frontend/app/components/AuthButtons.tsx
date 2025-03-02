@@ -1,10 +1,10 @@
 'use client';
 
-import { useAuth0 } from '@auth0/auth0-react';
+import { useUser } from '@auth0/nextjs-auth0/client';
 import { motion } from 'framer-motion';
 
 export const AuthButtons = () => {
-  const { isAuthenticated, loginWithRedirect, logout, user, isLoading } = useAuth0();
+  const { user, error, isLoading } = useUser();
 
   if (isLoading) {
     return (
@@ -14,7 +14,15 @@ export const AuthButtons = () => {
     );
   }
 
-  if (isAuthenticated && user) {
+  if (error) {
+    return (
+      <div className="flex gap-4">
+        <div className="text-sm text-red-700">Error: {error.message}</div>
+      </div>
+    );
+  }
+
+  if (user) {
     return (
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
@@ -27,33 +35,33 @@ export const AuthButtons = () => {
           )}
           <span className="text-sm text-green-800 hidden sm:inline">{user.name}</span>
         </div>
-        <motion.button 
-          className="text-sm hover:underline text-green-700"
+        <motion.a 
+          className="text-sm hover:underline text-green-700 cursor-pointer"
           whileHover={{ scale: 1.05 }}
-          onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+          href="/api/auth/logout"
         >
           Logout
-        </motion.button>
+        </motion.a>
       </div>
     );
   }
 
   return (
     <div className="flex gap-4">
-      <motion.button 
-        className="text-sm hover:underline text-green-700"
+      <motion.a 
+        className="text-sm hover:underline text-green-700 cursor-pointer"
         whileHover={{ scale: 1.05 }}
-        onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}
+        href="/api/auth/login?screen_hint=signup"
       >
         Sign Up
-      </motion.button>
-      <motion.button 
-        className="text-sm hover:underline text-green-700"
+      </motion.a>
+      <motion.a 
+        className="text-sm hover:underline text-green-700 cursor-pointer"
         whileHover={{ scale: 1.05 }}
-        onClick={() => loginWithRedirect()}
+        href="/api/auth/login"
       >
         Login
-      </motion.button>
+      </motion.a>
     </div>
   );
 }; 

@@ -38,45 +38,45 @@ export async function POST(req: Request) {
     await prisma.user.upsert({
       where: { id: userId },
       update: { 
-        email: session.user.email,
-        name: session.user.name
+        email: session.user.email || '',
+        name: session.user.name || ''
       },
       create: {
         id: userId,
-        email: session.user.email,
-        name: session.user.name
+        email: session.user.email || '',
+        name: session.user.name || ''
       }
     });
     
-    // Then create or update preferences
+    // Ensure all arrays are defined, even if empty
     const preferences = await prisma.userPreferences.upsert({
       where: { userId },
       update: {
-        allergies: data.allergies,
-        dietaryRestrictions: data.dietaryRestrictions,
-        mealType: data.mealType,
-        cuisineTypes: data.cuisineType,
-        prepTime: data.prepTime,
-        cookingMethods: data.cookingMethod,
-        preferredIngredients: data.preferredIngredients,
-        avoidIngredients: data.avoidIngredients
+        allergies: Array.isArray(data.allergies) ? data.allergies : [],
+        dietaryRestrictions: Array.isArray(data.dietaryRestrictions) ? data.dietaryRestrictions : [],
+        mealType: data.mealType || null,
+        cuisineTypes: Array.isArray(data.cuisineType) ? data.cuisineType : [],
+        prepTime: data.prepTime || null,
+        cookingMethods: Array.isArray(data.cookingMethod) ? data.cookingMethod : [],
+        preferredIngredients: Array.isArray(data.preferredIngredients) ? data.preferredIngredients : [],
+        avoidIngredients: Array.isArray(data.avoidIngredients) ? data.avoidIngredients : []
       },
       create: {
         userId,
-        allergies: data.allergies,
-        dietaryRestrictions: data.dietaryRestrictions,
-        mealType: data.mealType,
-        cuisineTypes: data.cuisineType,
-        prepTime: data.prepTime,
-        cookingMethods: data.cookingMethod,
-        preferredIngredients: data.preferredIngredients,
-        avoidIngredients: data.avoidIngredients
+        allergies: Array.isArray(data.allergies) ? data.allergies : [],
+        dietaryRestrictions: Array.isArray(data.dietaryRestrictions) ? data.dietaryRestrictions : [],
+        mealType: data.mealType || null,
+        cuisineTypes: Array.isArray(data.cuisineType) ? data.cuisineType : [],
+        prepTime: data.prepTime || null,
+        cookingMethods: Array.isArray(data.cookingMethod) ? data.cookingMethod : [],
+        preferredIngredients: Array.isArray(data.preferredIngredients) ? data.preferredIngredients : [],
+        avoidIngredients: Array.isArray(data.avoidIngredients) ? data.avoidIngredients : []
       }
     });
     
-    return NextResponse.json({ preferences });
+    return NextResponse.json({ success: true, preferences });
   } catch (error) {
     console.error('Error saving preferences:', error);
-    return NextResponse.json({ error: 'Failed to save preferences' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to save preferences' }, { status: 500 });
   }
 } 

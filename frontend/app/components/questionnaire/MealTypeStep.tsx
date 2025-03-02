@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { X } from "lucide-react";
 
 interface MealTypeStepProps {
   preferences: any;
@@ -11,55 +11,62 @@ interface MealTypeStepProps {
 }
 
 export default function MealTypeStep({ preferences, updatePreferences, onNext, onBack }: MealTypeStepProps) {
-  const [otherCuisine, setOtherCuisine] = useState("");
+  const [cuisineInput, setCuisineInput] = useState("");
   
-  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert"];
-  
-  const cuisineTypes = [
-    "Italian", "Mexican", "Chinese", "Indian", "Japanese",
-    "American", "Mediterranean", "Thai", "French", "Korean",
-    "Vietnamese", "Spanish", "Greek", "Brazilian"
+  const mealTypes = [
+    "Breakfast", "Lunch", "Dinner", "Snack", "Dessert"
   ];
   
-  const handleMealTypeSelect = (type: string) => {
-    updatePreferences("mealType", type);
+  const popularCuisines = [
+    "Italian", "Mexican", "Chinese", "Japanese", "Indian", 
+    "Thai", "French", "Mediterranean", "Korean", "American"
+  ];
+  
+  const handleMealTypeChange = (mealType: string) => {
+    updatePreferences("mealType", mealType);
   };
   
-  const handleCuisineSelect = (cuisine: string) => {
-    const currentCuisines = preferences.cuisineType || [];
-    if (currentCuisines.includes(cuisine)) {
-      updatePreferences("cuisineType", currentCuisines.filter((c: string) => c !== cuisine));
-    } else {
-      updatePreferences("cuisineType", [...currentCuisines, cuisine]);
+  const handleAddCuisine = () => {
+    if (cuisineInput.trim() && !preferences.cuisineType.includes(cuisineInput.trim())) {
+      updatePreferences("cuisineType", [...preferences.cuisineType, cuisineInput.trim()]);
+      setCuisineInput("");
     }
   };
   
-  const addOtherCuisine = () => {
-    if (otherCuisine && !preferences.cuisineType.includes(otherCuisine)) {
-      updatePreferences("cuisineType", [...preferences.cuisineType, otherCuisine]);
-      setOtherCuisine("");
+  const handleCuisineKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCuisine();
+    }
+  };
+  
+  const handleRemoveCuisine = (cuisine: string) => {
+    updatePreferences("cuisineType", preferences.cuisineType.filter((c: string) => c !== cuisine));
+  };
+  
+  const handleCuisineClick = (cuisine: string) => {
+    if (!preferences.cuisineType.includes(cuisine)) {
+      updatePreferences("cuisineType", [...preferences.cuisineType, cuisine]);
     }
   };
   
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-6 text-green-800">Meal Type</h2>
+    <div className="space-y-8">
+      <h2 className="text-2xl font-semibold text-green-800">Meal Type & Cuisine</h2>
       
       {/* Meal Type Selection */}
-      <div className="mb-8">
-        <h3 className="text-lg font-medium mb-3 text-gray-700">Which type of meal are you looking to make?</h3>
-        
-        <div className="flex flex-wrap gap-2 mb-4">
-          {mealTypes.map(type => (
+      <div>
+        <h3 className="text-lg font-medium mb-3 text-green-700">What type of meal are you looking for?</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {mealTypes.map((type) => (
             <button
               key={type}
-              type="button"
-              onClick={() => handleMealTypeSelect(type)}
-              className={`px-4 py-2 rounded-md text-sm ${
-                preferences.mealType === type
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className={`p-3 rounded-md border ${
+                preferences.mealType === type 
+                  ? "bg-green-100 border-green-500 text-green-800" 
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
               }`}
+              onClick={() => handleMealTypeChange(type)}
             >
               {type}
             </button>
@@ -68,63 +75,81 @@ export default function MealTypeStep({ preferences, updatePreferences, onNext, o
       </div>
       
       {/* Cuisine Type Selection */}
-      <div className="mb-8">
-        <h3 className="text-lg font-medium mb-3 text-gray-700">Which type of cuisine do you want?</h3>
+      <div>
+        <h3 className="text-lg font-medium mb-3 text-green-700">Any specific cuisines you prefer?</h3>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-          {cuisineTypes.map(cuisine => (
-            <button
-              key={cuisine}
-              type="button"
-              onClick={() => handleCuisineSelect(cuisine)}
-              className={`px-3 py-2 rounded-md text-sm ${
-                preferences.cuisineType?.includes(cuisine)
-                  ? "bg-green-100 text-green-800 border border-green-300"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {cuisine}
-            </button>
-          ))}
-          
-          <div className="flex items-center col-span-2 sm:col-span-3 md:col-span-4 mt-2">
-            <input
-              type="text"
-              value={otherCuisine}
-              onChange={(e) => setOtherCuisine(e.target.value)}
-              placeholder="Other cuisine..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              onKeyDown={(e) => e.key === "Enter" && addOtherCuisine()}
-            />
-            <button
-              type="button"
-              onClick={addOtherCuisine}
-              className="ml-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              Add
-            </button>
+        {/* Selected cuisines */}
+        {preferences.cuisineType.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {preferences.cuisineType.map((cuisine: string) => (
+              <div 
+                key={cuisine} 
+                className="bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center"
+              >
+                <span>{cuisine}</span>
+                <button 
+                  className="ml-2 text-green-600 hover:text-green-800"
+                  onClick={() => handleRemoveCuisine(cuisine)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Cuisine input */}
+        <div className="flex mb-4">
+          <input
+            type="text"
+            value={cuisineInput}
+            onChange={(e) => setCuisineInput(e.target.value)}
+            onKeyDown={handleCuisineKeyDown}
+            placeholder="Type a cuisine..."
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          <button
+            onClick={handleAddCuisine}
+            className="bg-green-600 text-white px-4 py-2 rounded-r-md hover:bg-green-700"
+          >
+            Add
+          </button>
+        </div>
+        
+        {/* Popular cuisines */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-600 mb-2">Popular cuisines:</h4>
+          <div className="flex flex-wrap gap-2">
+            {popularCuisines.map((cuisine) => (
+              <button
+                key={cuisine}
+                className={`px-3 py-1 rounded-full text-sm ${
+                  preferences.cuisineType.includes(cuisine)
+                    ? "bg-green-100 text-green-800 border border-green-300"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                }`}
+                onClick={() => handleCuisineClick(cuisine)}
+              >
+                {cuisine}
+              </button>
+            ))}
           </div>
         </div>
       </div>
       
-      {/* Navigation */}
-      <div className="flex justify-between mt-8">
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4">
         <button
-          type="button"
           onClick={onBack}
-          className="flex items-center px-4 py-2 text-green-700 bg-white border border-green-600 rounded-md hover:bg-green-50"
+          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
         >
-          <ChevronLeft size={16} className="mr-1" />
           Back
         </button>
-        
         <button
-          type="button"
           onClick={onNext}
-          className="flex items-center px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
         >
           Next
-          <ChevronRight size={16} className="ml-1" />
         </button>
       </div>
     </div>

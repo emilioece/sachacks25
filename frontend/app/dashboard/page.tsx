@@ -9,6 +9,8 @@ import MealTypeStep from "../components/questionnaire/MealTypeStep";
 import TimeMethodStep from "../components/questionnaire/TimeMethodStep";
 import IngredientsStep from "../components/questionnaire/IngredientsStep";
 import AllergiesStep from "../components/questionnaire/AllergiesStep";
+import Link from "next/link";
+import { Camera } from "lucide-react";
 
 export default function Dashboard() {
   const { user, isLoading, error } = useUser();
@@ -71,28 +73,44 @@ export default function Dashboard() {
     }
   };
   
-  // Add this function to your Dashboard component
+  // Update the savePreferences function in the Dashboard component
   const savePreferences = async () => {
     try {
+      // Ensure all arrays are defined before sending
+      const dataToSend = {
+        allergies: Array.isArray(preferences.allergies) ? preferences.allergies : [],
+        dietaryRestrictions: Array.isArray(preferences.dietaryRestrictions) ? preferences.dietaryRestrictions : [],
+        mealType: preferences.mealType || "",
+        cuisineType: Array.isArray(preferences.cuisineType) ? preferences.cuisineType : [],
+        prepTime: preferences.prepTime || "",
+        cookingMethod: Array.isArray(preferences.cookingMethod) ? preferences.cookingMethod : [],
+        preferredIngredients: Array.isArray(preferences.preferredIngredients) ? preferences.preferredIngredients : [],
+        avoidIngredients: Array.isArray(preferences.avoidIngredients) ? preferences.avoidIngredients : []
+      };
+
       const response = await fetch('/api/preferences', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(dataToSend),
       });
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to save preferences');
+        console.error('Error response:', data);
+        throw new Error(data.error || 'Failed to save preferences');
       }
       
-      const data = await response.json();
       console.log('Preferences saved:', data);
       
-      // Redirect to recipe generation page or dashboard
-      router.push('/recipes');
+      // Always redirect to upload page, even if preferences are empty
+      router.push('/upload');
     } catch (error) {
       console.error('Error saving preferences:', error);
+      // Continue to upload page even if there was an error saving preferences
+      router.push('/upload');
     }
   };
   

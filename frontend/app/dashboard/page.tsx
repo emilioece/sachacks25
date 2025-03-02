@@ -220,7 +220,7 @@ export default function Dashboard() {
 
       <footer className="w-full border-t border-green-200 mt-12 pt-6 pb-4">
         <div className="text-center text-gray-600 text-sm">
-          <p>© {new Date().getFullYear()} Waste None. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} EcoEats. All rights reserved.</p>
         </div>
       </footer>
     </div>

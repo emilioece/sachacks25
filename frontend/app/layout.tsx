@@ -7,7 +7,7 @@ import Providers from "./providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Waste None - Reduce Food Waste with AI",
+  title: "EcoEats - Reduce Food Waste with AI",
   description: "Create delicious recipes with ingredients you already have",
 };
 

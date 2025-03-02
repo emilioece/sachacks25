@@ -52,11 +52,15 @@ export default function Home() {
     const y = -Math.abs(relativeIndex * 15);
     const zIndex = 10 - Math.abs(relativeIndex);
     
-    const scale = 1 - Math.abs(relativeIndex) * 0.1;
+    // Determine if this is the center card
+    const isCenter = relativeIndex === 0;
+    
+    // Base scale - center card is larger
+    const scale = isCenter ? 1.35 : 1 - Math.abs(relativeIndex) * 0.1;
     const opacity = 1 - Math.abs(relativeIndex) * 0.2;
     const rotate = relativeIndex * 5;
     
-    return { x, y, rotate, scale, opacity, zIndex };
+    return { x, y, rotate, scale, opacity, zIndex, isCenter };
   };
   
   // Function to start auto-rotation
@@ -84,11 +88,11 @@ export default function Home() {
       (prev + 1) % recipeCards.length
     );
   };
-  
+
   // Start auto-rotation on component mount
   useEffect(() => {
     startAutoRotation();
-    
+
     // Clean up interval on unmount
     return () => {
       if (autoRotateRef.current) {
@@ -96,7 +100,7 @@ export default function Home() {
       }
     };
   }, [hoveredCard]);
-  
+
   // Update carousel when active card changes
   useEffect(() => {
     carouselControls.start("visible");
@@ -108,21 +112,27 @@ export default function Home() {
       <Navbar />
 
       {/* Main Content */}
-      <main className="flex flex-col items-center gap-8">
+      <main className="flex flex-col items-center gap-6">
         {/* Recipe Generator Headline */}
         <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold mb-2 text-green-800 flex items-center justify-center gap-2">
-            <UtensilsCrossed size={20} className="text-green-600" />
-            {user ? `Hello, ${user.given_name || user.name?.split(' ')[0] || 'User'}!` : "Maximize your ingredients"}
-          </h2>
-          <p className="text-gray-600 flex items-center justify-center gap-2">
-            <Camera size={16} className="text-green-600" />
+          <h1 className="text-4xl md:text-5xl font-bold mb-3 text-green-800">
+            Maximize your ingredients
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 flex items-center justify-center gap-2">
+            <Camera className="text-green-600" size={20} />
             Take snap shots of what&apos;s left in your fridge/pantry
           </p>
+          {user && (
+            <h2 className="text-2xl font-semibold mt-3 text-green-700">
+              Hello, {typeof user.given_name === 'string' 
+                ? user.given_name 
+                : (typeof user.name === 'string' ? user.name.split(' ')[0] : 'User')}!
+            </h2>
+          )}
         </div>
 
-        {/* Recipe Carousel Animation */}
-        <div className="w-full max-w-5xl flex justify-center items-center my-16 relative h-80">
+        {/* Recipe Carousel Animation - reduced vertical margins */}
+        <div className="w-full max-w-5xl flex justify-center items-center my-8 relative h-80">
           {/* Left Arrow */}
           <motion.button 
             className="absolute left-4 z-20 bg-white/80 hover:bg-white text-green-700 p-2 rounded-full shadow-md"
@@ -149,7 +159,13 @@ export default function Home() {
               return (
                 <motion.div 
                   key={item.id} 
-                  className="absolute w-36 h-48 border border-green-200 flex flex-col items-center bg-white rounded-md shadow-sm cursor-pointer overflow-hidden"
+                  className={`absolute flex flex-col items-center bg-white rounded-md shadow-sm cursor-pointer overflow-hidden border ${
+                    position.isCenter ? 'border-green-300' : 'border-green-200'
+                  }`}
+                  style={{
+                    width: position.isCenter ? '180px' : '144px',
+                    height: position.isCenter ? '240px' : '192px',
+                  }}
                   initial={{ 
                     x: position.x, 
                     y: position.y, 
@@ -160,13 +176,13 @@ export default function Home() {
                   }}
                   animate={{ 
                     x: position.x, 
-                    y: isHovered ? position.y - 20 : position.y, // Move up when hovered
+                    y: isHovered ? position.y - 10 : position.y, // Move up slightly when hovered
                     rotate: position.rotate,
-                    scale: isHovered ? position.scale * 1.1 : position.scale,
+                    scale: isHovered && !position.isCenter ? position.scale * 1.05 : position.scale,
                     opacity: position.opacity,
                     zIndex: isHovered ? 20 : position.zIndex,
-                    boxShadow: isHovered 
-                      ? "0px 15px 30px rgba(0, 0, 0, 0.15)" 
+                    boxShadow: position.isCenter || isHovered
+                      ? "0px 10px 25px rgba(0, 0, 0, 0.15)" 
                       : "0px 2px 8px rgba(0, 0, 0, 0.05)"
                   }}
                   transition={{
@@ -178,17 +194,19 @@ export default function Home() {
                   onHoverEnd={() => setHoveredCard(null)}
                   onClick={() => setActiveCardIndex(index)}
                 >
-                  <div className="relative w-full h-32">
+                  <div className="relative w-full" style={{ height: position.isCenter ? '180px' : '144px' }}>
                     <Image 
                       src={item.image}
                       alt={item.title}
                       fill
-                      sizes="144px"
+                      sizes={position.isCenter ? "180px" : "144px"}
                       style={{ objectFit: 'cover' }}
                       priority={index === activeCardIndex}
                     />
                   </div>
-                  <div className="p-2 text-center text-sm font-medium text-green-800">
+                  <div className={`p-2 text-center font-medium text-green-800 ${
+                    position.isCenter ? 'text-base' : 'text-sm'
+                  }`}>
                     {item.title}
                   </div>
                 </motion.div>
@@ -207,11 +225,11 @@ export default function Home() {
           </motion.button>
           
           {/* Carousel Indicators */}
-          <div className="absolute bottom-0 flex gap-2 justify-center">
+          <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex gap-2 justify-center">
             {recipeCards.map((_, index) => (
               <button
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                className={`w-2.5 h-2.5 rounded-full transition-colors ${
                   index === activeCardIndex ? "bg-green-600" : "bg-gray-300"
                 }`}
                 onClick={() => setActiveCardIndex(index)}
@@ -220,9 +238,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Let's Cook Button */}
+        {/* Let's Cook Button - moved up with the carousel */}
         <motion.button 
-          className="bg-green-600 hover:bg-green-700 text-white px-12 py-3 rounded-full text-lg font-medium transition-colors shadow-md flex items-center gap-2"
+          className="bg-green-600 hover:bg-green-700 text-white px-12 py-3 rounded-full text-lg font-medium transition-colors shadow-md flex items-center gap-2 mt-6"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleLetsCookClick}

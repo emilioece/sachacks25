@@ -71,6 +71,62 @@ export default function Dashboard() {
     }
   };
   
+  // Add this function to your Dashboard component
+  const savePreferences = async () => {
+    try {
+      const response = await fetch('/api/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferences),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+      
+      const data = await response.json();
+      console.log('Preferences saved:', data);
+      
+      // Redirect to recipe generation page or dashboard
+      router.push('/recipes');
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+    }
+  };
+  
+  // Add this to your useEffect in the Dashboard component
+  useEffect(() => {
+    // Fetch saved preferences if user is authenticated
+    const fetchPreferences = async () => {
+      try {
+        const response = await fetch('/api/preferences');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.preferences) {
+            setPreferences({
+              allergies: data.preferences.allergies || [],
+              dietaryRestrictions: data.preferences.dietaryRestrictions || [],
+              mealType: data.preferences.mealType || "",
+              cuisineType: data.preferences.cuisineTypes || [],
+              prepTime: data.preferences.prepTime || "",
+              cookingMethod: data.preferences.cookingMethods || [],
+              preferredIngredients: data.preferences.preferredIngredients || [],
+              avoidIngredients: data.preferences.avoidIngredients || []
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching preferences:', error);
+      }
+    };
+
+    if (user) {
+      fetchPreferences();
+    }
+  }, [user]);
+  
   if (isLoading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   if (error) return <div className="flex items-center justify-center min-h-screen">Error: {error.message}</div>;
   if (!user) return null;
@@ -110,7 +166,7 @@ export default function Dashboard() {
             preferences={preferences} 
             updatePreferences={updatePreferences} 
             onBack={goToPreviousStep} 
-            onSubmit={() => console.log("Submitting preferences:", preferences)} 
+            onSubmit={savePreferences} 
           />
         );
       default:

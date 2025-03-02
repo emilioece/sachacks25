@@ -8,11 +8,30 @@ import { AuthButtons } from './components/AuthButtons';
 import { useAuth0 } from '@auth0/auth0-react';
 
 export default function Home() {
-  const { isAuthenticated, user } = useAuth0();
+  const { isAuthenticated, user, loginWithRedirect } = useAuth0();
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const carouselControls = useAnimation();
   const autoRotateRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Handle Let's Cook button click
+  const handleLetsCookClick = () => {
+    if (!isAuthenticated) {
+      // Redirect to sign up if not authenticated
+      loginWithRedirect({ 
+        authorizationParams: { 
+          screen_hint: 'signup',
+          // Store the current page as the return URL after authentication
+          redirect_uri: window.location.origin
+        }
+      });
+    } else {
+      // If authenticated, proceed to recipe creation
+      // This could be a redirect to another page or other functionality
+      console.log("Authenticated user clicked Let's Cook");
+      // Example: router.push('/create-recipe');
+    }
+  };
   
   // Recipe data with images
   const recipeCards = [
@@ -218,6 +237,7 @@ export default function Home() {
           className="bg-green-600 hover:bg-green-700 text-white px-12 py-3 rounded-full text-lg font-medium transition-colors shadow-md flex items-center gap-2"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={handleLetsCookClick}
         >
           <UtensilsCrossed size={20} />
           Let&apos;s Cook
@@ -241,12 +261,6 @@ export default function Home() {
       <footer className="w-full border-t border-green-200 mt-12 pt-6 pb-4">
         <div className="text-center text-gray-600 text-sm">
           <p>© {new Date().getFullYear()} Waste None. All rights reserved.</p>
-          <div className="flex justify-center gap-6 mt-2">
-            <a href="#" className="hover:text-green-700 hover:underline">About</a>
-            <a href="#" className="hover:text-green-700 hover:underline">Privacy</a>
-            <a href="#" className="hover:text-green-700 hover:underline">Terms</a>
-            <a href="#" className="hover:text-green-700 hover:underline">Contact</a>
-          </div>
         </div>
       </footer>
     </div>

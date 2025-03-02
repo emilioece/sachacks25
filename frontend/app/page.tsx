@@ -4,8 +4,11 @@ import Image from "next/image";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { Camera, UtensilsCrossed, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { AuthButtons } from './components/AuthButtons';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export default function Home() {
+  const { isAuthenticated, user } = useAuth0();
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const carouselControls = useAnimation();
@@ -94,10 +97,7 @@ export default function Home() {
           <Leaf className="text-green-600" size={24} />
           Waste None
         </h1>
-        <div className="flex gap-4">
-          <button className="text-sm hover:underline text-green-700">Sign Up</button>
-          <button className="text-sm hover:underline text-green-700">Login</button>
-        </div>
+        <AuthButtons />
       </header>
 
       {/* Main Content */}
@@ -106,7 +106,7 @@ export default function Home() {
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold mb-2 text-green-800 flex items-center justify-center gap-2">
             <UtensilsCrossed size={20} className="text-green-600" />
-            &quot;Maximize your ingredients&quot;
+            {isAuthenticated && user ? `Hello, ${user.given_name || user.name}!` : "Maximize your ingredients"}
           </h2>
           <p className="text-gray-600 flex items-center justify-center gap-2">
             <Camera size={16} className="text-green-600" />

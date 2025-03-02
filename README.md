@@ -101,8 +101,8 @@ By eliminating food waste, EcoEats not only helps you make the most of what’s 
 
 ## Technologies Used
 
-- **Frontend**: Next.js, React, Tailwind CSS (if used)
-- **Backend**: Python, Uvicorn, FastAPI (or your chosen framework)
+- **Frontend**: Next.js, React, Tailwind CSS
+- **Backend**: Python, Uvicorn, FastAPI
 - **Machine Learning**: Google's Gemini 1.5 Prof & 2.0 Flash
 - **Authentication**: OAuth
 

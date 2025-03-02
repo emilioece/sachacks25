@@ -9,6 +9,9 @@ import io
 from PIL import Image, ImageDraw, ImageFont
 import base64
 import re
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +37,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @app.get("/")
 def read_root():
@@ -330,19 +337,71 @@ async def analyze_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
 @app.post("/generate-recipe/")
-async def generate_recipe(ingredients: list[str]):
+async def generate_recipe(request_data: dict):
     try:
+        # Log that the endpoint was hit
+        logger.info("Generate recipe endpoint hit!")
+        logger.info(f"Request data: {request_data}")
+        
+        # Extract ingredients and preferences from the request
+        ingredients = request_data.get("ingredients", [])
+        logger.info(f"Ingredients: {ingredients}")
+        
+        preferences = request_data.get("preferences", {})
+        logger.info(f"Preferences: {preferences}")
+        
+        # Extract specific preferences
+        allergies = preferences.get("allergies", [])
+        dietary_restrictions = preferences.get("dietaryRestrictions", [])
+        meal_type = preferences.get("mealType")
+        cuisine_types = preferences.get("cuisineTypes", [])
+        prep_time = preferences.get("prepTime")
+        cooking_methods = preferences.get("cookingMethods", [])
+        preferred_ingredients = preferences.get("preferredIngredients", [])
+        avoid_ingredients = preferences.get("avoidIngredients", [])
+        
         # Create a text-only model for recipe generation
         text_model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Join ingredients into a comma-separated string
         ingredients_text = ", ".join(ingredients)
         
+        # Build preference constraints
+        constraints = []
+        
+        if allergies:
+            constraints.append(f"DO NOT include these allergens: {', '.join(allergies)}.")
+        
+        if dietary_restrictions:
+            constraints.append(f"Follow these dietary restrictions: {', '.join(dietary_restrictions)}.")
+        
+        if meal_type:
+            constraints.append(f"The recipe should be for a {meal_type}.")
+        
+        if cuisine_types:
+            constraints.append(f"The recipe should be in the style of {', '.join(cuisine_types)} cuisine.")
+        
+        if prep_time:
+            constraints.append(f"The preparation time should be around {prep_time}.")
+        
+        if cooking_methods:
+            constraints.append(f"Use these cooking methods: {', '.join(cooking_methods)}.")
+        
+        if preferred_ingredients:
+            constraints.append(f"Try to include these preferred ingredients if possible: {', '.join(preferred_ingredients)}.")
+        
+        if avoid_ingredients:
+            constraints.append(f"DO NOT use these ingredients: {', '.join(avoid_ingredients)}.")
+        
+        constraints_text = " ".join(constraints)
+        
         # Prompt for recipe generation
         prompt = f"""
         Generate a recipe using only the ingredients listed: {ingredients_text}.
 
         You don't have to use all the ingredients, but use a subset of them.
+        
+        {constraints_text}
 
         Format the response as a JSON object with the following structure:
         {{
@@ -379,6 +438,11 @@ async def generate_recipe(ingredients: list[str]):
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating recipe: {str(e)}")
+
+@app.get("/test/")
+async def test_endpoint():
+    logger.info("Test endpoint hit!")
+    return {"message": "API is working!"}
 
 if __name__ == "__main__":
     import uvicorn

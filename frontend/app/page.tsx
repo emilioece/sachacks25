@@ -1,14 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 import { Camera, UtensilsCrossed, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { AuthButtons } from './components/AuthButtons';
-import { useAuth0 } from '@auth0/auth0-react';
+import { useUser } from "@auth0/nextjs-auth0/client";
+import { useRouter } from "next/navigation";
+import Navbar from "./components/Navbar";
 
 export default function Home() {
-  const { isAuthenticated, user, loginWithRedirect } = useAuth0();
+  const { user } = useUser();
+  const router = useRouter();
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const carouselControls = useAnimation();
@@ -16,20 +18,12 @@ export default function Home() {
   
   // Handle Let's Cook button click
   const handleLetsCookClick = () => {
-    if (!isAuthenticated) {
-      // Redirect to sign up if not authenticated
-      loginWithRedirect({ 
-        authorizationParams: { 
-          screen_hint: 'signup',
-          // Store the current page as the return URL after authentication
-          redirect_uri: window.location.origin
-        }
-      });
+    if (user) {
+      // If authenticated, redirect to dashboard
+      router.push('/dashboard');
     } else {
-      // If authenticated, proceed to recipe creation
-      // This could be a redirect to another page or other functionality
-      console.log("Authenticated user clicked Let's Cook");
-      // Example: router.push('/create-recipe');
+      // If not authenticated, redirect to sign up
+      window.location.href = '/api/auth/login?screen_hint=signup';
     }
   };
   
@@ -110,14 +104,8 @@ export default function Home() {
 
   return (
     <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-8 font-[family-name:var(--font-geist-sans)] bg-green-50">
-      {/* Header */}
-      <header className="flex justify-between items-center w-full mb-6">
-        <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2">
-          <Leaf className="text-green-600" size={24} />
-          Waste None
-        </h1>
-        <AuthButtons />
-      </header>
+      {/* Use the Navbar component instead of inline header */}
+      <Navbar />
 
       {/* Main Content */}
       <main className="flex flex-col items-center gap-8">
@@ -125,7 +113,7 @@ export default function Home() {
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold mb-2 text-green-800 flex items-center justify-center gap-2">
             <UtensilsCrossed size={20} className="text-green-600" />
-            {isAuthenticated && user ? `Hello, ${user.given_name || user.name}!` : "Maximize your ingredients"}
+            {user ? `Hello, ${user.given_name || user.name?.split(' ')[0] || 'User'}!` : "Maximize your ingredients"}
           </h2>
           <p className="text-gray-600 flex items-center justify-center gap-2">
             <Camera size={16} className="text-green-600" />

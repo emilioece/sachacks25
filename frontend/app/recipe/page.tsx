@@ -55,12 +55,25 @@ export default function RecipePage() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/generate-recipe/", {
+      // First, fetch the user preferences
+      const preferencesResponse = await fetch("/api/preferences");
+      let userPreferences = {};
+      
+      if (preferencesResponse.ok) {
+        const preferencesData = await preferencesResponse.json();
+        userPreferences = preferencesData.preferences || {};
+      }
+      
+      // Then send both ingredients and preferences to the backend
+      const response = await fetch("/api/generate-recipe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(ingredients),
+        body: JSON.stringify({ 
+          ingredients,
+          preferences: userPreferences 
+        }),
       });
 
       if (!response.ok) {

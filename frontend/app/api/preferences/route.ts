@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@auth0/nextjs-auth0';
-import prisma from '../../../lib/prisma';
+import { cookies } from 'next/headers';
+
+// Cookie name prefix to make it unique per user
+const COOKIE_PREFIX = 'user_preferences_';
+// Cookie options
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+  path: '/',
+};
 
 export async function GET(req: Request) {
   try {
@@ -11,10 +21,12 @@ export async function GET(req: Request) {
     }
     
     const userId = session.user.sub;
+    const cookieStore = cookies();
+    const cookieName = `${COOKIE_PREFIX}${userId}`;
     
-    const preferences = await prisma.userPreferences.findUnique({
-      where: { userId },
-    });
+    // Get preferences from cookie
+    const preferencesStr = (await cookieStore).get(cookieName)?.value;
+    const preferences = preferencesStr ? JSON.parse(preferencesStr) : {};
     
     return NextResponse.json({ preferences });
   } catch (error) {
@@ -34,45 +46,22 @@ export async function POST(req: Request) {
     const userId = session.user.sub;
     const data = await req.json();
     
-    // Create or update user record first
-    await prisma.user.upsert({
-      where: { id: userId },
-      update: { 
-        email: session.user.email || '',
-        name: session.user.name || ''
-      },
-      create: {
-        id: userId,
-        email: session.user.email || '',
-        name: session.user.name || ''
-      }
-    });
+    // Prepare preferences data
+    const preferences = {
+      allergies: Array.isArray(data.allergies) ? data.allergies : [],
+      dietaryRestrictions: Array.isArray(data.dietaryRestrictions) ? data.dietaryRestrictions : [],
+      mealType: data.mealType || null,
+      cuisineTypes: Array.isArray(data.cuisineType) ? data.cuisineType : [],
+      prepTime: data.prepTime || null,
+      cookingMethods: Array.isArray(data.cookingMethod) ? data.cookingMethod : [],
+      preferredIngredients: Array.isArray(data.preferredIngredients) ? data.preferredIngredients : [],
+      avoidIngredients: Array.isArray(data.avoidIngredients) ? data.avoidIngredients : []
+    };
     
-    // Ensure all arrays are defined, even if empty
-    const preferences = await prisma.userPreferences.upsert({
-      where: { userId },
-      update: {
-        allergies: Array.isArray(data.allergies) ? data.allergies : [],
-        dietaryRestrictions: Array.isArray(data.dietaryRestrictions) ? data.dietaryRestrictions : [],
-        mealType: data.mealType || null,
-        cuisineTypes: Array.isArray(data.cuisineType) ? data.cuisineType : [],
-        prepTime: data.prepTime || null,
-        cookingMethods: Array.isArray(data.cookingMethod) ? data.cookingMethod : [],
-        preferredIngredients: Array.isArray(data.preferredIngredients) ? data.preferredIngredients : [],
-        avoidIngredients: Array.isArray(data.avoidIngredients) ? data.avoidIngredients : []
-      },
-      create: {
-        userId,
-        allergies: Array.isArray(data.allergies) ? data.allergies : [],
-        dietaryRestrictions: Array.isArray(data.dietaryRestrictions) ? data.dietaryRestrictions : [],
-        mealType: data.mealType || null,
-        cuisineTypes: Array.isArray(data.cuisineType) ? data.cuisineType : [],
-        prepTime: data.prepTime || null,
-        cookingMethods: Array.isArray(data.cookingMethod) ? data.cookingMethod : [],
-        preferredIngredients: Array.isArray(data.preferredIngredients) ? data.preferredIngredients : [],
-        avoidIngredients: Array.isArray(data.avoidIngredients) ? data.avoidIngredients : []
-      }
-    });
+    // Store preferences in cookie
+    const cookieStore = cookies();
+    const cookieName = `${COOKIE_PREFIX}${userId}`;
+    (await cookieStore).set(cookieName, JSON.stringify(preferences), COOKIE_OPTIONS);
     
     return NextResponse.json({ success: true, preferences });
   } catch (error) {

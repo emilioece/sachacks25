@@ -56,7 +56,7 @@ export default function Home() {
     const isCenter = relativeIndex === 0;
     
     // Base scale - center card is larger
-    const scale = isCenter ? 1.35 : 1 - Math.abs(relativeIndex) * 0.1;
+    const scale = isCenter ? 1.2 : 1 - Math.abs(relativeIndex) * 0.05;
     const opacity = 1 - Math.abs(relativeIndex) * 0.2;
     const rotate = relativeIndex * 5;
     

@@ -237,91 +237,6 @@ async def analyze_image(file: UploadFile = File(...)):
             text_response = response.text
             food_items, items_with_boxes = parse_food_items_with_boxes(text_response)
         
-        # # If still no valid boxes found, try with a different prompt format
-        # if not items_with_boxes:
-        #     alternate_prompt = """
-        #     For each individual food item in this image, provide:
-        #     1. The specific name of the item
-        #     2. A tight bounding box around only that item
-            
-        #     Return a JSON array with this structure:
-        #     {
-        #         "items": [
-        #             {
-        #                 "name": "specific food name",
-        #                 "box": [ymin, xmin, ymax, xmax]
-        #             },
-        #             {
-        #                 "name": "another food item",
-        #                 "box": [ymin, xmin, ymax, xmax]
-        #             }
-        #         ]
-        #     }
-            
-        #     IMPORTANT: 
-        #     - Each box should tightly bound a single item, not shelves or categories
-        #     - Coordinates should be normalized between 0 and 1
-        #     - Be precise with item names
-        #     - Return only valid JSON with no additional text
-        #     """
-            
-        #     try:
-        #         alt_response = vision_model.generate_content([alternate_prompt, *image_parts])
-        #         alt_text = alt_response.text
-        #         food_items, items_with_boxes = parse_food_items_with_boxes(alt_text)
-        #     except Exception as e:
-        #         print(f"Error with alternate approach: {str(e)}")
-        
-        # # If still no bounding boxes, generate artificial ones based on items
-        # if not items_with_boxes:
-        #     # First get just the food items
-        #     items_prompt = """
-        #     Analyze this image and identify each individual food item or ingredient visible.
-        #     Be specific (e.g., "strawberry jam" not just "jam").
-        #     Return ONLY a JSON array of strings with the names of the specific food items.
-        #     For example: ["strawberry jam jar", "milk bottle", "cheddar cheese block"]
-        #     Do not include general categories or shelves.
-        #     """
-            
-        #     items_response = model.generate_content([items_prompt, *image_parts])
-        #     items_text = items_response.text
-            
-        #     try:
-        #         # Find JSON array in the response if it's not a clean JSON
-        #         json_match = re.search(r'\[.*\]', items_text, re.DOTALL)
-        #         if json_match:
-        #             items_text = json_match.group(0)
-                
-        #         food_items = json.loads(items_text)
-                
-        #         # Ensure it's a list
-        #         if not isinstance(food_items, list):
-        #             food_items = [str(food_items)]
-                
-        #         # Generate simulated bounding boxes
-        #         # This time with a more random distribution to avoid grid-like appearance
-        #         import random
-        #         for i, item in enumerate(food_items):
-        #             # Create a reasonably sized box at a semi-random position
-        #             box_width = random.uniform(0.15, 0.3)
-        #             box_height = random.uniform(0.15, 0.3)
-                    
-        #             # Distribute across the image with some randomness
-        #             x_pos = (i % 3) * 0.33 + random.uniform(0.02, 0.1)
-        #             y_pos = (i // 3) * 0.33 + random.uniform(0.02, 0.1)
-                    
-        #             # Ensure the box stays within image bounds
-        #             xmin = min(0.95 - box_width, max(0.05, x_pos))
-        #             ymin = min(0.95 - box_height, max(0.05, y_pos))
-        #             xmax = xmin + box_width
-        #             ymax = ymin + box_height
-                    
-        #             items_with_boxes.append((item, [ymin, xmin, ymax, xmax]))
-        #     except json.JSONDecodeError:
-        #         # If parsing fails, create at least one item
-        #         food_items = ["Unknown food item"]
-        #         items_with_boxes = [("Unknown food item", [0.1, 0.1, 0.4, 0.4])]
-        
         # Draw bounding boxes on the image
         labeled_image = draw_bounding_boxes(contents, items_with_boxes)
         
@@ -397,22 +312,43 @@ async def generate_recipe(request_data: dict):
         
         # Prompt for recipe generation
         prompt = f"""
-        Generate a recipe using only the ingredients listed: {ingredients_text}.
+        Generate THREE different recipes using only the ingredients listed: {ingredients_text}.
 
-        You don't have to use all the ingredients, but use a subset of them.
-        
+        You don't have to use all the ingredients, but use a subset of them for each recipe.
+        Make each recipe unique and different from the others.
+
         {constraints_text}
 
         Format the response as a JSON object with the following structure:
         {{
-            "title": "Recipe Name",
-            "ingredients": ["ingredient 1", "ingredient 2", ...],
-            "instructions": ["step 1", "step 2", ...],
-            "prep_time": "X minutes",
-            "cook_time": "Y minutes",
-            "servings": Z
+            "recipes": [
+                {{
+                    "title": "Recipe 1 Name",
+                    "ingredients": ["ingredient 1", "ingredient 2", ...],
+                    "instructions": ["step 1", "step 2", ...],
+                    "prep_time": "X minutes",
+                    "cook_time": "Y minutes",
+                    "servings": Z
+                }},
+                {{
+                    "title": "Recipe 2 Name",
+                    "ingredients": ["ingredient 1", "ingredient 2", ...],
+                    "instructions": ["step 1", "step 2", ...],
+                    "prep_time": "X minutes",
+                    "cook_time": "Y minutes",
+                    "servings": Z
+                }},
+                {{
+                    "title": "Recipe 3 Name",
+                    "ingredients": ["ingredient 1", "ingredient 2", ...],
+                    "instructions": ["step 1", "step 2", ...],
+                    "prep_time": "X minutes",
+                    "cook_time": "Y minutes",
+                    "servings": Z
+                }}
+            ]
         }}
-        
+
         Return only the JSON object without any additional text.
         """
         
